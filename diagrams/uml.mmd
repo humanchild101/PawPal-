@@ -1,7 +1,9 @@
 classDiagram
     %% Keep this file updated so it matches your final implementation.
-    %% Owner -> Pet -> PetSchedule -> Task is a strict one-directional tree:
-    %% no child holds a back-reference to its parent, so nothing needs manual syncing.
+    %% Owner -> Pet -> Task is a strict one-directional tree: no child holds
+    %% a back-reference to its parent, so nothing needs manual syncing.
+    %% Scheduler is a separate service class: it reads from an Owner's pets
+    %% to build a plan, but is not part of the ownership tree itself.
 
     class Owner {
         +List~Pet~ pet_list
@@ -9,6 +11,7 @@ classDiagram
         +add_pet(pet: Pet) void
         +remove_pet(pet: Pet) void
         +change_pref(pref: str) void
+        +get_all_tasks() List~Task~
     }
 
     class Pet {
@@ -18,34 +21,41 @@ classDiagram
         +datetime last_walked
         +datetime last_bathed
         +datetime last_fed
-        +PetSchedule schedule
+        +datetime last_played
+        +List~Task~ task_list
         +str special_info
         +feed() void
         +bathe() void
         +walk() void
         +play() void
-        +add_to_schedule(task: Task) void
-        +remove_from_schedule(task: Task) void
-    }
-
-    class PetSchedule {
-        +List~Task~ task_list
-        +int available_minutes
         +add_task(task: Task) void
         +remove_task(task: Task) void
-        +set_available_minutes(minutes: int) void
-        +get_reasoning() str
     }
 
     class Task {
-        +str task
-        +int duration_minutes
-        +str priority
+        +str description
+        +datetime time
+        +str frequency
         +bool completed
-        +str recurrence
+        +int duration_minutes
+        +int priority
+        +bool required
         +modify_task() void
+        +mark_complete() void
+    }
+    note for Task "priority is a 1 (lowest) to 10 (highest) scale.\nrequired tasks are guaranteed a slot regardless of priority."
+
+    class Scheduler {
+        +int available_minutes
+        +List~Task~ plan
+        +int remaining_minutes
+        +List~Task~ unscheduled
+        +build_plan(owner: Owner) List~Task~
+        +set_available_minutes(minutes: int) void
+        +get_reasoning() str
+        +format_schedule(title: str) str
     }
 
     Owner "1" --> "0..*" Pet : owns
-    Pet "1" --> "1" PetSchedule : has
-    PetSchedule "1" --> "0..*" Task : contains
+    Pet "1" --> "0..*" Task : task_list
+    Scheduler ..> Owner : builds plan from
