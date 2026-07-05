@@ -1,15 +1,51 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
     %% Keep this file updated so it matches your final implementation.
+    %% Owner -> Pet -> PetSchedule -> Task is a strict one-directional tree:
+    %% no child holds a back-reference to its parent, so nothing needs manual syncing.
 
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Owner {
+        +List~Pet~ pet_list
+        +str time_preferences
+        +add_pet(pet: Pet) void
+        +remove_pet(pet: Pet) void
+        +change_pref(pref: str) void
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +str name
+        +str species
+        +list meds
+        +datetime last_walked
+        +datetime last_bathed
+        +datetime last_fed
+        +PetSchedule schedule
+        +str special_info
+        +feed() void
+        +bathe() void
+        +walk() void
+        +play() void
+        +add_to_schedule(task: Task) void
+        +remove_from_schedule(task: Task) void
     }
 
-    ClassName --> AnotherClass : relationship
+    class PetSchedule {
+        +List~Task~ task_list
+        +int available_minutes
+        +add_task(task: Task) void
+        +remove_task(task: Task) void
+        +set_available_minutes(minutes: int) void
+        +get_reasoning() str
+    }
+
+    class Task {
+        +str task
+        +int duration_minutes
+        +str priority
+        +bool completed
+        +str recurrence
+        +modify_task() void
+    }
+
+    Owner "1" --> "0..*" Pet : owns
+    Pet "1" --> "1" PetSchedule : has
+    PetSchedule "1" --> "0..*" Task : contains

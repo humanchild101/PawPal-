@@ -7,6 +7,12 @@
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+The main classes that I am including are 
+    Pet, Task, PetSchedule, Owner.
+    - Pet will have attributes such as name, species, owner (Owner object), meds, last_walked, last_bathed, last_fed, schedule (PetSchedule object), special_info. Methods: feed, bathe, walk, play, add_to_schedule, remove_from_schedule.
+    - Task will have attributes such as task, owner (Owner object), pet (optional Pet object, if you want this task to be for a specific pet task description.) Methods: modify_task
+    - PetSchedule will have attributes such as pet (Pet object), owner (Owner object), task_list (list of Task objects), owner_time_preferences (text desc), owner_priorities (list of Task objects). Methods: add_task, remove_task, change_preference, change_priority 
+    - Owner will have attributes such as pet_list (list of Pet objects), pet_schedule_list (list of PetSchedule objects) time_preferences. Methods: add_pet, remove_pet, change_pref 
 **b. Design changes**
 
 - Did your design change during implementation?
