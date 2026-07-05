@@ -116,10 +116,54 @@ Confidence level that it works properly: 4.4/5
 
 Describe your app in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. Add pet name called Potato if species cat and a cat named Onion
+2. Add a new task for onion called "Feed", 5 mins, 10/10 priority, required, 8 am, daily
+3. Add the same for Potato at the same time, but change the name to "Feed Potato Now"
+4. Add a task for potato called play with mouse doll, 30 mins, 7/10, 9:15 am, weekly
+5. onion --> "outdoor exposure", 30 mins, 8/10,  2:45 PM, daily
+6. Set available time to 20 minutes, generate schedule
+7. "2 task(s) are scheduled at overlapping times — see the items marked in red below." - Feeding potato and onion are at the same time, and therefore flagged. ⚠️ Warning: Not Enough Time for Required Tasks Required tasks alone need 20 more minute(s) than your 20-minute budget
+8. set time availablee to 200 minutres and add feed onion task at 9 am after removing original feed onion task. Output is normal
+9. Set feed potato task to complete. A new feed potato task will automatically appear as pending. if you use the filterr, now you will see the completed task with teh completion filter. 
 
+```
+python3 main.py
+=== Daily Schedule ===
+04:30 AM — give squash a squash (5 min, priority 5/10)
+08:30 AM — Spyder Feed (10 min, required)
+09:00 AM — Spyder litter box clean (15 min, priority 4/10)
+11:00 AM — Jasmine Feed (5 min, required)
+11:10 AM — Spyder Feed (10 min, required)
+02:30 PM — Squash feed (5 min, required)
+
+Not scheduled:
+02:00 AM — Jasmine Play (30 min, priority 4/10) [insufficient time]
+08:00 AM — Jasmine Walk (30 min, priority 4/10) [insufficient time]
+09:00 AM — Squash litter box cleaning (15 min, priority 4/10) [insufficient time]
+
+Selected 6 task(s) totaling 50 of 60 available minutes.
+Required tasks were guaranteed a slot first; remaining tasks were then added by priority (10 = highest, 1 = lowest) until the available time ran out:
+  - Jasmine Feed (required, 5 min)
+  - Spyder Feed (required, 10 min)
+  - Spyder Feed (required, 10 min)
+  - Squash feed (required, 5 min)
+  - give squash a squash (priority 5/10, 5 min)
+  - Spyder litter box clean (priority 4/10, 15 min)
+
+Completed tasks:
+  - Jasmine Feed
+Pending tasks:
+  - Jasmine Walk
+  - Jasmine Play
+  - Spyder Feed
+  - Spyder Feed
+  - Spyder litter box clean
+  - Squash litter box cleaning
+  - Squash feed
+  - give squash a squash
+Jasmine tasks:
+  - Jasmine Walk
+  - Jasmine Feed
+  - Jasmine Play
+```
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

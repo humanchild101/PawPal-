@@ -46,20 +46,20 @@ The scheduler cannot assign a mandatory amount of time that the user is availabl
 
 - Describe one moment where you did not accept an AI suggestion as-is.
 - How did you evaluate or verify what the AI suggested?
-
+One of the AI suggestions was with regards to conflict handling. Its suggestion was quite simple and did not really address the conflicts. There are many issues to consider such as when the user did not input enough time available to complete any tasks, or barely enoguh time to finish tasks. Along with not resolving these, the Claude suggestion, also didn't account for what tasks might need to be counted as 'required'. I found these issues before testing but primarily saw them once i started running the program in the console. I directed Claude to add 'required' tags to the tasks deemed by teh user as requuired. Additioally, I changed the program such that when the user doesn't input that mucch time, the required tasks are still shown as part of the schedule btu with a warning. I also added another part to the output where it shows the tasks that werent scheduled, bevcause n the beginning Claude just left out whatever tasks didnt fit, even if they were priority, so diuspkaying the unscheduled tasks too would provide the user witjh more clarity and ultimately they can decide whether to stick to the suggested schedule or modify it if there was an unscheduled task with high priority. Initially the scale for priority was just 3 options, I tried a scale of 1-5 next, but it seemed to still cause confuaion if there weere mutliple tasks and there were some that were of the same priority in the program but not the same priority in reality (ex: feeding a dog vs caring for an animal that maybe doesnt need to be cared for as often but still needs it. feeding both is technically important but feeding the dog in this hypothetical example is more important). I finally changed it to a 1-10 scale. 
 ---
 
 ## 4. Testing and Verification
 
 **a. What you tested**
 
-- What behaviors did you test?
+- What behaviors did you test? 
 - Why were these tests important?
-
+I tested behaviors such as the sorting, filtering, and especially the conflicts/warnings display/handling as well as the reasoning display. There were others, but I thought these were most important. This is because they looked into waht was essentially the core logic of the program, and if those tests failed it would mean I needded to revise that logic and look into ways to improve it and the functionality. 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+- How confident are you that your scheduler works correctly? 4.4
+- What edge cases would you test next if you had more time? I'd test with mutliple pets and also look more into the user preferences input in the very beginning of the application page to see if it's actually effecting the schedule and how so if it does. 
 
 ---
 
@@ -67,12 +67,10 @@ The scheduler cannot assign a mandatory amount of time that the user is availabl
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
-
+I'm satisfied with the schedule display and the variations of the final display depending on conflicts and warnings
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
-
+I would add more functionality to the user preferences input. Right now, it's kind of just there, and I don't think it really adds much to the program functionality. I would imrpove this app by looking into that and giving it a real purpose. Also, I would like to imrpove the formattinig of the app a little more.  
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+- What is one important thing you learned about designing systems or working with AI on this project? Designing systems with AI requires a lot of going back and forth between the code and tests and the application, at least in my case. The AI suggestions are good much of the time, but it's important to also think beyond them, because while I was working on thsi project, I ntoiced several aspects that Claude did not consider. It's important to use the suggestions, but also provide Claude with morre context or additional information on what you need so that it can help you better. Relying on Claude for suggestions is fine, but I learned that I would also need to evaluate those suggestions on my own again. 
