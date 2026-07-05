@@ -279,3 +279,312 @@ def test_build_plan_excludes_completed_tasks():
     plan = scheduler.build_plan(owner)
 
     assert done not in plan
+
+
+# ---- Filtering by pet or completion status ----
+
+def test_filter_tasks_with_no_arguments_returns_everything():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    pet.add_task(Task(description="Walk", duration_minutes=10, priority=5))
+    pet.add_task(Task(description="Feed", duration_minutes=5, priority=5, completed=True))
+
+    assert len(owner.filter_tasks()) == 2
+
+
+def test_filter_tasks_combining_completed_and_pet_name():
+    owner = Owner()
+    dog = Pet(name="Mochi", species="dog")
+    cat = Pet(name="Whiskers", species="cat")
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+    dog_pending = Task(description="Walk", duration_minutes=10, priority=5)
+    dog_done = Task(description="Bathe", duration_minutes=10, priority=5, completed=True)
+    cat_pending = Task(description="Feed cat", duration_minutes=5, priority=5)
+    dog.add_task(dog_pending)
+    dog.add_task(dog_done)
+    cat.add_task(cat_pending)
+
+    assert owner.filter_tasks(completed=False, pet_name="Mochi") == [dog_pending]
+
+
+def test_filter_tasks_returns_empty_list_when_nothing_matches():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    pet.add_task(Task(description="Walk", duration_minutes=10, priority=5))
+
+    assert owner.filter_tasks(pet_name="Nonexistent") == []
+    assert owner.filter_tasks(completed=True) == []
+
+
+# ---- Sorting tasks by time ----
+
+def test_format_schedule_lists_tasks_in_chronological_order():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    late = Task(
+        description="Evening walk", duration_minutes=10, priority=5, required=True,
+        time=datetime(2026, 1, 1, 20, 0),
+    )
+    early = Task(
+        description="Morning feed", duration_minutes=10, priority=5, required=True,
+        time=datetime(2026, 1, 1, 6, 0),
+    )
+    pet.add_task(late)
+    pet.add_task(early)
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(60)
+    scheduler.build_plan(owner)
+    schedule_text = scheduler.format_schedule()
+
+    assert schedule_text.index("Morning feed") < schedule_text.index("Evening walk")
+
+
+def test_format_schedule_places_untimed_tasks_after_timed_ones():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    untimed = Task(description="Someday task", duration_minutes=10, priority=5, required=True)
+    timed = Task(
+        description="Morning walk", duration_minutes=10, priority=5, required=True,
+        time=datetime(2026, 1, 1, 8, 0),
+    )
+    pet.add_task(untimed)
+    pet.add_task(timed)
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(60)
+    scheduler.build_plan(owner)
+    schedule_text = scheduler.format_schedule()
+
+    assert schedule_text.index("Morning walk") < schedule_text.index("Someday task")
+
+
+# ---- Time conflict handling edge cases ----
+
+def test_find_time_conflicts_ignores_tasks_without_a_time():
+    walk = Task(description="Walk", duration_minutes=30, priority=5)
+    feed = Task(description="Feed", duration_minutes=10, priority=5)
+
+    scheduler = Scheduler()
+
+    assert scheduler.find_time_conflicts([walk, feed]) == []
+
+
+def test_find_time_conflicts_detects_full_containment():
+    long_task = Task(
+        description="Long walk", duration_minutes=60, priority=5,
+        time=datetime(2026, 1, 1, 8, 0),
+    )
+    short_task = Task(
+        description="Quick photo", duration_minutes=5, priority=5,
+        time=datetime(2026, 1, 1, 8, 30),
+    )
+
+    scheduler = Scheduler()
+    conflicts = scheduler.find_time_conflicts([long_task, short_task])
+
+    assert (long_task, short_task) in conflicts
+
+
+def test_find_time_conflicts_detects_identical_start_times():
+    walk = Task(description="Walk", duration_minutes=15, priority=5, time=datetime(2026, 1, 1, 8, 0))
+    feed = Task(description="Feed", duration_minutes=15, priority=5, time=datetime(2026, 1, 1, 8, 0))
+
+    scheduler = Scheduler()
+
+    assert (walk, feed) in scheduler.find_time_conflicts([walk, feed])
+
+
+def test_find_time_conflicts_detects_every_overlapping_pair_among_three_tasks():
+    a = Task(description="A", duration_minutes=30, priority=5, time=datetime(2026, 1, 1, 8, 0))
+    b = Task(description="B", duration_minutes=30, priority=5, time=datetime(2026, 1, 1, 8, 10))
+    c = Task(description="C", duration_minutes=30, priority=5, time=datetime(2026, 1, 1, 8, 20))
+
+    scheduler = Scheduler()
+    conflicts = scheduler.find_time_conflicts([a, b, c])
+
+    assert len(conflicts) == 3
+
+
+# ---- Displaying conflict messages ----
+
+def test_get_reasoning_includes_overlap_warning_and_task_descriptions():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    walk = Task(
+        description="Walk", duration_minutes=30, priority=5, required=True,
+        time=datetime(2026, 1, 1, 8, 0),
+    )
+    play = Task(
+        description="Play", duration_minutes=30, priority=5, required=True,
+        time=datetime(2026, 1, 1, 8, 15),
+    )
+    pet.add_task(walk)
+    pet.add_task(play)
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(60)
+    scheduler.build_plan(owner)
+    reasoning = scheduler.get_reasoning()
+
+    assert "Overlapping Tasks" in reasoning
+    assert "Walk" in reasoning
+    assert "Play" in reasoning
+
+
+def test_format_schedule_includes_overlapping_tasks_section():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    walk = Task(
+        description="Walk", duration_minutes=30, priority=5, required=True,
+        time=datetime(2026, 1, 1, 8, 0),
+    )
+    play = Task(
+        description="Play", duration_minutes=30, priority=5, required=True,
+        time=datetime(2026, 1, 1, 8, 15),
+    )
+    pet.add_task(walk)
+    pet.add_task(play)
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(60)
+    scheduler.build_plan(owner)
+    schedule_text = scheduler.format_schedule()
+
+    assert "Overlapping tasks:" in schedule_text
+    assert "Walk (08:00 AM) overlaps Play (08:15 AM)" in schedule_text
+
+
+def test_get_reasoning_says_nothing_about_conflicts_when_there_are_none():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    pet.add_task(Task(description="Walk", duration_minutes=10, priority=5, required=True))
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(60)
+    scheduler.build_plan(owner)
+
+    assert "Overlapping Tasks" not in scheduler.get_reasoning()
+
+
+def test_get_reasoning_warns_when_required_tasks_exceed_budget():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    pet.add_task(Task(description="Feed", duration_minutes=50, priority=5, required=True))
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(10)
+    scheduler.build_plan(owner)
+    reasoning = scheduler.get_reasoning()
+
+    assert "Not Enough Time for Required Tasks" in reasoning
+    assert "40 more minute" in reasoning
+
+
+def test_get_reasoning_suggests_time_needed_for_highest_priority_task():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    pet.add_task(Task(description="Walk", duration_minutes=20, priority=5))
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(5)
+    scheduler.build_plan(owner)
+    reasoning = scheduler.get_reasoning()
+
+    assert "Walk" in reasoning
+    assert "15 minute" in reasoning
+
+
+# ---- Adding and removing tasks (edge cases) ----
+
+def test_add_task_preserves_insertion_order():
+    pet = Pet(name="Mochi", species="dog")
+    first = Task(description="First", duration_minutes=10, priority=5)
+    second = Task(description="Second", duration_minutes=10, priority=5)
+
+    pet.add_task(first)
+    pet.add_task(second)
+
+    assert pet.task_list == [first, second]
+
+
+def test_add_task_allows_duplicate_descriptions():
+    pet = Pet(name="Mochi", species="dog")
+
+    pet.add_task(Task(description="Feed", duration_minutes=10, priority=5))
+    pet.add_task(Task(description="Feed", duration_minutes=10, priority=5))
+
+    assert len(pet.task_list) == 2
+
+
+def test_remove_task_not_in_list_is_a_no_op():
+    pet = Pet(name="Mochi", species="dog")
+    kept = Task(description="Walk", duration_minutes=10, priority=5)
+    never_added = Task(description="Bathe", duration_minutes=10, priority=5)
+    pet.add_task(kept)
+
+    pet.remove_task(never_added)
+
+    assert pet.task_list == [kept]
+
+
+# ---- Adding and removing pets (edge cases) ----
+
+def test_add_pet_preserves_insertion_order():
+    owner = Owner()
+    dog = Pet(name="Mochi", species="dog")
+    cat = Pet(name="Whiskers", species="cat")
+
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+
+    assert owner.pet_list == [dog, cat]
+
+
+def test_remove_pet_not_in_list_is_a_no_op():
+    owner = Owner()
+    kept = Pet(name="Mochi", species="dog")
+    never_added = Pet(name="Whiskers", species="cat")
+    owner.add_pet(kept)
+
+    owner.remove_pet(never_added)
+
+    assert owner.pet_list == [kept]
+
+
+# ---- Additional scheduling edge cases ----
+
+def test_build_plan_marks_non_fitting_optional_task_as_unscheduled():
+    owner = Owner()
+    pet = Pet(name="Mochi", species="dog")
+    owner.add_pet(pet)
+    too_long = Task(description="Long walk", duration_minutes=100, priority=5)
+    pet.add_task(too_long)
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(10)
+    plan = scheduler.build_plan(owner)
+
+    assert too_long not in plan
+    assert too_long in scheduler.unscheduled
+
+
+def test_build_plan_with_no_pets_produces_an_empty_plan():
+    owner = Owner()
+
+    scheduler = Scheduler()
+    scheduler.set_available_minutes(60)
+    plan = scheduler.build_plan(owner)
+
+    assert plan == []
+    assert scheduler.get_reasoning() == "No tasks were scheduled: there are no pending tasks to schedule."

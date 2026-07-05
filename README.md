@@ -86,10 +86,20 @@ pytest --cov
 ```
 
 Sample test output:
+=========================================== test session starts ===========================================
+platform darwin -- Python 3.12.1, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/nikhila/Desktop/Important/Code/CodePath/PawPal-
+plugins: anyio-4.14.1
+collected 43 items                                                                                        
 
-```
-# Paste your pytest output here
-```
+tests/test_pawpal.py ...........................................                                    [100%]
+
+=========================================== 43 passed in 0.08s ============================================
+
+
+The tests cover filtering, conflict messages, time conflict cases, time availability warnings, adding/remving tasks/pets, and sortings
+
+Confidence level that it works properly: 4.4/5
 
 ## 📐 Smarter Scheduling
 
