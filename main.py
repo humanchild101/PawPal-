@@ -60,7 +60,7 @@ squash.add_task(Task(
     description="Squash litter box cleaning",
     duration_minutes=15,
     priority=4,
-    time=datetime.combine(today, time(10, 0)),
+    time=datetime.combine(today, time(9, 0)),
 ))
 
 squash.add_task(Task(
@@ -68,6 +68,7 @@ squash.add_task(Task(
     duration_minutes=5,
     priority=4,
     required=True,
+    frequency="daily",
     time=datetime.combine(today, time(14, 30)),
 ))
 
@@ -75,13 +76,31 @@ squash.add_task(Task(
     description="give squash a squash",
     duration_minutes=5,
     priority=5,
+    frequency="weekly",
     time=datetime.combine(today, time(4, 30)),
 ))
 
 
 
 scheduler = Scheduler()
-scheduler.set_available_minutes(10)
+scheduler.set_available_minutes(60)
 scheduler.build_plan(owner)
 
 print(scheduler.format_schedule())
+
+jasmine.task_list[1].mark_complete() 
+
+print()
+
+print("Completed tasks:")
+for task in owner.filter_tasks(completed=True):
+    print(f"  - {task.description}")
+
+print("Pending tasks:")
+for task in owner.filter_tasks(completed=False):
+    print(f"  - {task.description}")
+
+print("Jasmine tasks:")
+for task in owner.filter_tasks(pet_name="jasmine"):
+    print(f"  - {task.description}")
+

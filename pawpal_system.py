@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Tuple
+
+RECURRENCE_INTERVALS = {"daily": timedelta(days=1), "weekly": timedelta(weeks=1)}
 
 
 @dataclass
@@ -21,9 +23,22 @@ class Task:
             if hasattr(self, key):
                 setattr(self, key, value)
 
-    def mark_complete(self) -> None:
-        """Mark this task as completed."""
+    def mark_complete(self) -> Optional["Task"]:
+        """Mark this task complete; if it recurs (daily/weekly), return its next occurrence."""
         self.completed = True
+
+        interval = RECURRENCE_INTERVALS.get(self.frequency)
+        if interval is None:
+            return None
+
+        return Task(
+            description=self.description,
+            duration_minutes=self.duration_minutes,
+            priority=self.priority,
+            time=self.time + interval if self.time else None,
+            frequency=self.frequency,
+            required=self.required,
+        )
 
 
 @dataclass
@@ -63,6 +78,12 @@ class Pet:
         if task in self.task_list:
             self.task_list.remove(task)
 
+    def complete_task(self, task: Task) -> None:
+        """Mark a task complete, scheduling its next occurrence if it recurs."""
+        next_task = task.mark_complete()
+        if next_task is not None:
+            self.add_task(next_task)
+
 
 @dataclass
 class Owner:
@@ -86,6 +107,16 @@ class Owner:
         """Return every task across all of this owner's pets."""
         return [task for pet in self.pet_list for task in pet.task_list]
 
+    def filter_tasks(self, completed: Optional[bool] = None, pet_name: Optional[str] = None) -> List[Task]:
+        """Return tasks across all pets, optionally filtered by completion status or pet name."""
+        return [
+            task
+            for pet in self.pet_list
+            if pet_name is None or pet.name == pet_name
+            for task in pet.task_list
+            if completed is None or task.completed == completed
+        ]
+
 
 @dataclass
 class Scheduler:
@@ -93,6 +124,7 @@ class Scheduler:
     plan: List[Task] = field(default_factory=list)
     remaining_minutes: int = 0
     unscheduled: List[Task] = field(default_factory=list)
+    time_conflicts: List[Tuple[Task, Task]] = field(default_factory=list)
 
     def build_plan(self, owner: Owner) -> List[Task]:
         """Build a plan of required tasks plus the highest-priority optional tasks that fit."""
@@ -114,7 +146,26 @@ class Scheduler:
         self.plan = plan
         self.remaining_minutes = remaining_minutes
         self.unscheduled = unscheduled
+        self.time_conflicts = self.find_time_conflicts(plan)
         return self.plan
+
+    def find_time_conflicts(self, tasks: List[Task]) -> List[Tuple[Task, Task]]:
+        """Return pairs of tasks (same pet or different pets) whose scheduled times overlap."""
+        conflicts = []
+        for i, task_a in enumerate(tasks):
+            for task_b in tasks[i + 1:]:
+                if self._times_overlap(task_a, task_b):
+                    conflicts.append((task_a, task_b))
+        return conflicts
+
+    @staticmethod
+    def _times_overlap(task_a: Task, task_b: Task) -> bool:
+        """Return True if task_a's and task_b's [time, time + duration) windows intersect."""
+        if task_a.time is None or task_b.time is None:
+            return False
+        end_a = task_a.time + timedelta(minutes=task_a.duration_minutes)
+        end_b = task_b.time + timedelta(minutes=task_b.duration_minutes)
+        return task_a.time < end_b and task_b.time < end_a
 
     def set_available_minutes(self, minutes: int) -> None:
         """Set the time budget used by build_plan."""
@@ -148,11 +199,22 @@ class Scheduler:
             lines.append(f"  - {task.description} ({tag}, {task.duration_minutes} min)")
 
         if self.remaining_minutes < 0:
+            lines.append("")
+            lines.append("**⚠️ Warning: Not Enough Time for Required Tasks**")
             lines.append(
-                f"Warning: required tasks alone need {abs(self.remaining_minutes)} more minute(s) "
+                f"Required tasks alone need {abs(self.remaining_minutes)} more minute(s) "
                 f"than your {self.available_minutes}-minute budget. All required tasks were still "
                 "included; consider freeing up more time."
             )
+
+        if self.time_conflicts:
+            lines.append("")
+            lines.append("**⚠️ Warning: Overlapping Tasks**")
+            for task_a, task_b in self.time_conflicts:
+                lines.append(
+                    f"  - \"{task_a.description}\" ({task_a.time.strftime('%I:%M %p')}) overlaps "
+                    f"\"{task_b.description}\" ({task_b.time.strftime('%I:%M %p')})"
+                )
         return "\n".join(lines)
 
     def format_schedule(self, title: str = "Daily Schedule") -> str:
@@ -172,7 +234,17 @@ class Scheduler:
                 time_str = task.time.strftime("%I:%M %p") if task.time else "unscheduled"
                 lines.append(
                     f"{time_str} — {task.description} "
-                    f"({task.duration_minutes} min, priority {task.priority}/10) [time conflict]"
+                    f"({task.duration_minutes} min, priority {task.priority}/10) [insufficient time]"
+                )
+
+        if self.time_conflicts:
+            lines.append("")
+            lines.append("Overlapping tasks:")
+            for task_a, task_b in self.time_conflicts:
+                time_a = task_a.time.strftime("%I:%M %p")
+                time_b = task_b.time.strftime("%I:%M %p")
+                lines.append(
+                    f"{task_a.description} ({time_a}) overlaps {task_b.description} ({time_b}) [time overlap]"
                 )
 
         lines.append("")

@@ -39,8 +39,8 @@ The scheduler cannot assign a mandatory amount of time that the user is availabl
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)? I used AI for design suggestions, implementation, and refactoring. Examples include asking it for suggestions with the initial design of the classes and asking it to implement changes to the scheduling system. 
+- What kinds of prompts or questions were most helpful? Direct prompts that gave a clear idea of what to implement gave the best results. 
 
 **b. Judgment and verification**
 

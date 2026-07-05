@@ -12,6 +12,7 @@ classDiagram
         +remove_pet(pet: Pet) void
         +change_pref(pref: str) void
         +get_all_tasks() List~Task~
+        +filter_tasks(completed: bool, pet_name: str) List~Task~
     }
 
     class Pet {
@@ -30,6 +31,7 @@ classDiagram
         +play() void
         +add_task(task: Task) void
         +remove_task(task: Task) void
+        +complete_task(task: Task) void
     }
 
     class Task {
@@ -41,20 +43,23 @@ classDiagram
         +int priority
         +bool required
         +modify_task() void
-        +mark_complete() void
+        +mark_complete() Task
     }
-    note for Task "priority is a 1 (lowest) to 10 (highest) scale.\nrequired tasks are guaranteed a slot regardless of priority."
+    note for Task "priority is a 1 (lowest) to 10 (highest) scale.\nrequired tasks are guaranteed a slot regardless of priority.\nmark_complete() returns the next occurrence if frequency is\n'daily' or 'weekly', else None. Pet.complete_task() schedules it."
 
     class Scheduler {
         +int available_minutes
         +List~Task~ plan
         +int remaining_minutes
         +List~Task~ unscheduled
+        +List~Tuple~ time_conflicts
         +build_plan(owner: Owner) List~Task~
+        +find_time_conflicts(tasks: List~Task~) List~Tuple~
         +set_available_minutes(minutes: int) void
         +get_reasoning() str
         +format_schedule(title: str) str
     }
+    note for Scheduler "time_conflicts holds (Task, Task) pairs whose\n[time, time + duration_minutes) windows overlap,\nregardless of whether they belong to the same pet."
 
     Owner "1" --> "0..*" Pet : owns
     Pet "1" --> "0..*" Task : task_list

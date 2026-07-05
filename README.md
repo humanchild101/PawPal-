@@ -46,6 +46,27 @@ pip install -r requirements.txt
 
 Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
 
+=== Today's Schedule ===
+08:30 AM — Spyder Feed (10 min, required)
+11:00 AM — Jasmine Feed (5 min, required)
+11:10 AM — Spyder Feed (10 min, required)
+02:30 PM — Squash feed (5 min, required)
+
+Not scheduled:
+02:00 AM — Jasmine Play (30 min, priority 4/10) [time conflict]
+04:30 AM — give squash a squash (5 min, priority 5/10) [time conflict]
+08:00 AM — Jasmine Walk (30 min, priority 4/10) [time conflict]
+09:00 AM — Spyder litter box clean (15 min, priority 4/10) [time conflict]
+10:00 AM — Squash litter box cleaning (15 min, priority 4/10) [time conflict]
+
+Selected 4 task(s) totaling 30 of 10 available minutes.
+Required tasks were guaranteed a slot first; remaining tasks were then added by priority (10 = highest, 1 = lowest) until the available time ran out:
+  - Jasmine Feed (required, 5 min)
+  - Spyder Feed (required, 10 min)
+  - Spyder Feed (required, 10 min)
+  - Squash feed (required, 5 min)
+Warning: required tasks alone need 20 more minute(s) than your 10-minute budget. All required tasks were still included; consider freeing up more time.
+
 ```
 # e.g.:
 # Daily plan for Biscuit (Golden Retriever):
@@ -76,10 +97,10 @@ Sample test output:
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | format_schedule| directly sorts the tasks in order of time when formatting the schedule content / text for display|
+| Filtering | filter_tasks|There are 2 options to either filterr by pet name or task completion status. |
+| Conflict handling | find_time_conflicts, times_overlap.  | returns conflicting task pairs, finds overlapping time windows |
+| Recurring tasks | complete_task| if this method sees that there is a recurrence interval like daily or weekly, it will create a new Task for the next day/week |
 
 ## 📸 Demo Walkthrough
 
